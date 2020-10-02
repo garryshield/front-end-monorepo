@@ -6,6 +6,7 @@ import {
   Grid
 } from 'grommet'
 import counterpart from 'counterpart'
+import { withParentSize } from '@vx/responsive'
 import { SpacedText } from '@zooniverse/react-components'
 import { ScatterPlotViewer } from '../ScatterPlotViewer'
 import { SingleImageViewerContainer } from '../SingleImageViewer'
@@ -19,8 +20,11 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
   const {
     allowPanZoom,
     barJSON,
+    highlightedSeries,
     imageLocation,
     invertYAxis,
+    parentHeight,
+    parentWidth,
     periodMultiple,
     phaseFocusedSeries,
     phasedJSON,
@@ -38,7 +42,6 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
     setSeriesVisibility,
     setYAxisInversion,
     theme,
-    visibleSeries
   } = props
 
   const underlays = [
@@ -58,24 +61,38 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
     rawJSON: allowPanZoom === 'rawJSON'
   }
 
+  const areas = (parentWidth <= 768) ?
+    [
+      { name: 'controls', start: [0, 0], end: [0, 0] },
+      { name: 'scatterPlots', start: [0, 1], end: [0, 1] },
+      { name: 'barCharts', start: [0, 2], end: [0, 2] },
+      { name: 'HRDiagram', start: [0, 3], end: [0, 3] }
+    ] :
+    [
+      { name: 'controls', start: [0, 0], end: [0, 0] },
+      { name: 'scatterPlots', start: [0, 1], end: [0, 7] },
+      { name: 'barCharts', start: [1, 0], end: [1, 2] },
+      { name: 'HRDiagram', start: [1, 3], end: [1, 7] }
+    ]
+  const columns = (parentWidth <= 768) ? ['full'] : ['2/3', '1/3']
+  const rows = (parentWidth <= 768)  ?
+    ['80px', '590px', '330px', '620px' ] :
+    ['80px', '80px', '80px', '80px', '80px', '80px', '80px', '50px']
+
   return (
     <Grid
-      areas={[
-        { name: 'controls', start: [0, 0], end: [0, 0] },
-        { name: 'scatterPlots', start: [0, 1], end: [0, 7] },
-        { name: 'barCharts', start: [1, 0], end: [1, 2] },
-        { name: 'HRDiagram', start: [1, 3], end: [1, 7] }
-      ]}
-      columns={['2/3', '1/3']}
+      areas={areas}
+      columns={columns}
       fill
-      gap='5px'
-      ref={ref}
-      rows={['80px', '80px', '80px', '80px', '80px', '80px', '80px', '50px']}
+      gap='xsmall'
       pad={{ horizontal: 'xsmall' }}
+      ref={ref}
+      rows={rows}
     >
       <Controls
         data={scatterPlot.data}
         gridArea='controls'
+        highlightedSeries={highlightedSeries}
         periodMultiple={periodMultiple}
         phaseFocusedSeries={phaseFocusedSeries}
         setPeriodMultiple={setPeriodMultiple}
@@ -83,7 +100,6 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
         setSeriesVisibility={setSeriesVisibility}
         setYAxisInversion={setYAxisInversion}
         theme={theme}
-        visibleSeries={visibleSeries}
       />
       <Box
         border={{ color: { light: 'light-3', dark: 'dark-3' }, size: 'xsmall' }}
@@ -107,6 +123,7 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
           >
             <ScatterPlotViewer
               data={phasedJSON.data}
+              highlightedSeries={highlightedSeries}
               invertAxes={{ x: false, y: invertYAxis }}
               margin={{
                 bottom: 50,
@@ -121,7 +138,6 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
               xAxisNumTicks={8}
               yAxisLabel={phasedJSON.chartOptions.yAxisLabel}
               yAxisNumTicks={8}
-              visibleSeries={visibleSeries}
               zoomControlFn={(zoomEnabled.phasedJSON) ? () => setAllowPanZoom('') : () => setAllowPanZoom('phasedJSON')}
               zooming={zoomEnabled.phasedJSON}
             />
@@ -133,6 +149,7 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
           >
             <ScatterPlotViewer
               data={scatterPlot.data}
+              highlightedSeries={highlightedSeries}
               invertAxes={{ x: false, y: invertYAxis }}
               margin={{
                 bottom: 50,
@@ -146,7 +163,6 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
               xAxisNumTicks={4}
               yAxisLabel={scatterPlot.chartOptions.yAxisLabel}
               yAxisNumTicks={6}
-              visibleSeries={visibleSeries}
               zoomControlFn={(zoomEnabled.rawJSON) ? () => setAllowPanZoom('') : () => setAllowPanZoom('rawJSON')}
               zooming={zoomEnabled.rawJSON}
             />
@@ -166,13 +182,17 @@ const VariableStarViewer = React.forwardRef((props, ref) => {
       >{Object.keys(barJSON).map((barChartKey) => {
         //Let's keep the rendering of the bar chart flexible in case more plots are added in the future
         return (
-          <BarChartViewer
-            data={barJSON[barChartKey].data}
+          <Box
+            basis='1/2'
             key={barChartKey}
-            xAxisLabel={barJSON[barChartKey].chartOptions.xAxisLabel}
-            yAxisDomain={barJSON[barChartKey].chartOptions.yAxisDomain}
-            yAxisLabel={barJSON[barChartKey].chartOptions.yAxisLabel}
-          />
+          >
+            <BarChartViewer
+              data={barJSON[barChartKey].data}
+              xAxisLabel={barJSON[barChartKey].chartOptions.xAxisLabel}
+              yAxisDomain={barJSON[barChartKey].chartOptions.yAxisDomain}
+              yAxisLabel={barJSON[barChartKey].chartOptions.yAxisLabel}
+            />
+          </Box>
         )})}
       </Box>
       {imageLocation && 
@@ -217,6 +237,7 @@ VariableStarViewer.defaultProps = {
       chartOptions: {}
     }
   },
+  highlightedSeries: [],
   imageLocation: null,
   invertYAxis: false,
   periodMultiple: 1,
@@ -238,7 +259,7 @@ VariableStarViewer.defaultProps = {
   setOnZoom: () => true,
   setPeriodMultiple: () => { },
   setSeriesPhaseFocus: () => {},
-  setSeriesVisibility: () => { },
+  setSeriesHighlight: () => { },
   setYAxisInversion: () => {},
   theme: {
     dark: false,
@@ -247,7 +268,6 @@ VariableStarViewer.defaultProps = {
       font: {}
     }
   },
-  visibleSeries: [],
   zooming: false
 }
 
@@ -263,8 +283,11 @@ VariableStarViewer.propTypes = {
       options: PropTypes.object
     }),
   }),
+  highlightedSeries: PropTypes.arrayOf(PropTypes.object),
   imageLocation: PropTypes.object,
   invertYAxis: PropTypes.bool,
+  parentHeight: PropTypes.number,
+  parentWidth: PropTypes.number,
   periodMultiple: PropTypes.number,
   phaseFocusedSeries: PropTypes.number,
   phasedJSON: PropTypes.shape({
@@ -279,12 +302,11 @@ VariableStarViewer.propTypes = {
   setOnZoom: PropTypes.func,
   setPeriodMultiple: PropTypes.func,
   setSeriesPhaseFocus: PropTypes.func,
-  setSeriesVisibility: PropTypes.func,
+  setSeriesHighlight: PropTypes.func,
   setYAxisInversion: PropTypes.func,
   theme: PropTypes.object,
-  visibleSeries: PropTypes.arrayOf(PropTypes.object),
   zooming: PropTypes.bool
 }
 
-export default withTheme(VariableStarViewer)
+export default withTheme(withParentSize(VariableStarViewer))
 export { VariableStarViewer }

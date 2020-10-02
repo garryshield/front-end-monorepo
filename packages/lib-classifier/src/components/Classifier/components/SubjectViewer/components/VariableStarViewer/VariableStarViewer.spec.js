@@ -6,11 +6,40 @@ import { VariableStarViewer } from './VariableStarViewer'
 import { SingleImageViewerContainer } from '../SingleImageViewer'
 import { ScatterPlotViewer } from '../ScatterPlotViewer'
 import en from './locales/en'
+import { expect } from 'chai'
 
 describe('Component > VariableStarViewer', function () {
   it('should render without crashing', function () {
     const wrapper = shallow(<VariableStarViewer />)
     expect(wrapper).to.be.ok()
+  })
+
+  describe('when the parent container size changes responsively', function () {
+    it('should have multi-column, multi-row grid layout when the parent size is greater than 768 pixels in width', function () {
+      const wrapper = shallow(<VariableStarViewer parentWidth={1000} />)
+      const props = wrapper.props()
+      expect(props.columns).to.deep.equal(['2/3', '1/3'])
+      expect(props.rows).to.deep.equal(['80px', '80px', '80px', '80px', '80px', '80px', '80px', '50px'])
+      expect(props.areas).to.deep.equal([
+        { name: 'controls', start: [0, 0], end: [0, 0] },
+        { name: 'scatterPlots', start: [0, 1], end: [0, 7] },
+        { name: 'barCharts', start: [1, 0], end: [1, 2] },
+        { name: 'HRDiagram', start: [1, 3], end: [1, 7] }
+      ])
+    })
+
+    it('should have a single column, multi-row grid layout when the parent size is less than 768 pixels in width', function () {
+      const wrapper = shallow(<VariableStarViewer parentWidth={600} />)
+      const props = wrapper.props()
+      expect(props.columns).to.deep.equal(['full'])
+      expect(props.rows).to.deep.equal(['80px', '590px', '330px', '620px'])
+      expect(props.areas).to.deep.equal([
+        { name: 'controls', start: [0, 0], end: [0, 0] },
+        { name: 'scatterPlots', start: [0, 1], end: [0, 1] },
+        { name: 'barCharts', start: [0, 2], end: [0, 2] },
+        { name: 'HRDiagram', start: [0, 3], end: [0, 3] }
+      ])
+    })
   })
 
   describe('HR diagram', function () {
@@ -57,7 +86,7 @@ describe('Component > VariableStarViewer', function () {
             phasedJSON={phasedJSONMock}
             phaseLimit={0.2}
             setAllowPanZoom={setAllowPanZoomSpy}
-            visibleSeries={[{ ['filter 1']: true }]}
+            highlightedSeries={[{ ['filter 1']: true }]}
             theme={zooTheme}
           />
         )
@@ -85,8 +114,8 @@ describe('Component > VariableStarViewer', function () {
       expect(phasedScatterPlot.props().yAxisNumTicks).to.equal(8)
     })
 
-    it('should set the visibleSeries prop', function () {
-      expect(phasedScatterPlot.props().visibleSeries).to.deep.equal([{ ['filter 1']: true }])
+    it('should set the highlightedSeries prop', function () {
+      expect(phasedScatterPlot.props().highlightedSeries).to.deep.equal([{ ['filter 1']: true }])
     })
 
     it('should set the underlays with the phaseLimit and theme colors', function () {
@@ -174,7 +203,7 @@ describe('Component > VariableStarViewer', function () {
           <VariableStarViewer
             rawJSON={rawJSONMock}
             setAllowPanZoom={setAllowPanZoomSpy}
-            visibleSeries={[{ ['filter 1']: true }]}
+            highlightedSeries={[{ ['filter 1']: true }]}
             theme={zooTheme}
           />
         )
@@ -202,8 +231,8 @@ describe('Component > VariableStarViewer', function () {
       expect(rawScatterPlot.props().yAxisNumTicks).to.equal(6)
     })
 
-    it('should set the visibleSeries prop', function () {
-      expect(rawScatterPlot.props().visibleSeries).to.deep.equal([{ ['filter 1']: true }])
+    it('should set the highlightedSeries prop', function () {
+      expect(rawScatterPlot.props().highlightedSeries).to.deep.equal([{ ['filter 1']: true }])
     })
 
     describe('when zoom is not enabled', function () {
